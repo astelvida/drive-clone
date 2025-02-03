@@ -1,0 +1,36 @@
+---
+description: full application context for AI assistance
+globs: src/**/*.{ts,tsx,js,jsx}, *.{json,js,ts}, .env, README.md, package-lock.json, tailwind.config.{js,ts}, postcss.config.{js,mjs}, drizzle.config.ts, package.json, .cursor/**/*.mdc
+---
+---
+description: Full application context for AI assistance
+globs: 
+  - "src/**/*.{ts,tsx,js,jsx}"
+  - "*.{json,js,ts}"
+  - ".env.example"
+  - "README.md"
+  - "tailwind.config.{js,ts}"
+  - "postcss.config.{js,mjs}"
+  - "drizzle.config.ts"
+  - ".cursor/**/*.mdc"
+excludeGlobs:
+  - "**/node_modules/**"
+  - "**/.next/**"
+  - "**/dist/**"
+  - "**/build/**"
+---
+
+This is the main codebase context for the Google Drive Clone application. Pull the versions from package.json or package-lock.json and then searchy on the wqeb for the documentation for the version in this app.
+
+Key technologies:
+- Next.js 15.1.6 with App Router
+- React 19
+- TypeScript @v5.6
+- TailwindCSS @v3.4
+- shadcn@latest using cli
+- Drizzle ORM@latest, drizzle Kit@latest with Neon serverless @latest PostgreSQL @latest, pull from package.json, all here are @latest
+- Clerk Auth @v6
+- UploadThing for file storage @v7
+
+
+Create

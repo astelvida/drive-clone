@@ -34,3 +34,7 @@ A modern Google Drive clone leveraging:
 - Search functionality
 - User management
 - Real-time collaboration
+
+## How to use versions
+
+For all packages use the version inside package.json/package-lock.json's dependencies and look up the docs on the website.

@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Drive Clone",
-  description: "A modern Google Drive clone built with Next.js",
+  description: "A Google Drive clone built with Next.js and Clerk",
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
         <body
           className={`${inter.className} min-h-screen bg-background antialiased`}
         >
-          {children}
+          <main className="min-h-screen">{children}</main>
         </body>
       </html>
     </ClerkProvider>

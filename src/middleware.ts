@@ -5,25 +5,26 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/api/webhook",
   "/get-started(.*)",
+  "/",
 ]);
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/forum(.*)"]);
 
-// export default clerkMiddleware(async (auth, req, event) => {
-//   if (!isPublicRoute(req)) {
-//     await auth.protect();
-//   }
-// });
-
-export default clerkMiddleware(async (auth, req) => {
-  const { userId, redirectToSignIn } = await auth();
-
-  if (!userId && !isPublicRoute(req)) {
-    // Add custom logic to run before redirecting
-
-    return redirectToSignIn();
+export default clerkMiddleware(async (auth, req, event) => {
+  if (!isPublicRoute(req)) {
+    await auth.protect();
   }
 });
+
+// export default clerkMiddleware(async (auth, req) => {
+//   const { userId, redirectToSignIn } = await auth();
+
+//   if (!userId && !isPublicRoute(req)) {
+//     // Add custom logic to run before redirecting
+
+//     return redirectToSignIn();
+//   }
+// });
 
 export const config = {
   matcher: [

@@ -1,6 +1,6 @@
 ---
 description: is helpful for creating new files, folders, understanding the structure of the app
-globs: src/**/*.{js,ts,jsx,tsx}
+globs: src/**/*.{js,ts,jsx,tsx}, 
 ---
 use next with src, app router, next js 15, typescript, tailwind and shadcn@latest components.
 
