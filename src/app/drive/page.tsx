@@ -1,10 +1,20 @@
-import { getFolderContents } from "@/db/utils";
-import { auth } from "@clerk/nextjs";
-import { FileGrid } from "@/components/drive/file-grid";
+import { getRootFolder, onboardUser } from "@/db/utils";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 export default async function DrivePage() {
-  const { userId } = auth();
-  const contents = await getFolderContents(null, userId!);
+  const { userId } = await auth();
 
-  return <FileGrid contents={contents} />;
+  if (!userId) {
+    throw new Error("User not found, should be redirected to sign in");
+  }
+
+  const rootFolder = await getRootFolder(userId!);
+
+  let rootFolderId = rootFolder?.id;
+  if (!rootFolderId) {
+    rootFolderId = await onboardUser(userId!);
+  }
+
+  return redirect(`/drive/folders/${rootFolderId}`);
 }

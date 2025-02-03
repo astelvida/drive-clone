@@ -1,12 +1,12 @@
 import { db } from "./index";
-import { files, folders } from "./schema";
-import { eq, and, desc } from "drizzle-orm";
-import type { NewFile, NewFolder } from "./schema";
+import { files_table, folders_table } from "./schema";
+import { eq, and, desc, isNotNull, isNull } from "drizzle-orm";
+import type { NewFileTable, NewFolderTable } from "./schema";
 
 // File operations
-export async function createFile(file: NewFile) {
+export async function createFile(file: NewFileTable) {
   try {
-    const [newFile] = await db.insert(files).values(file).returning();
+    const [newFile] = await db.insert(files_table).values(file).returning();
     return newFile;
   } catch (error) {
     console.error("Error creating file:", error);
@@ -14,16 +14,13 @@ export async function createFile(file: NewFile) {
   }
 }
 
-export async function getFilesByFolderId(
-  folderId: string | null,
-  userId: string
-) {
+export async function getFilesByFolderId(folderId: number, userId: string) {
   try {
     return await db
       .select()
-      .from(files)
-      .where(and(eq(files.folderId, folderId), eq(files.userId, userId)))
-      .orderBy(desc(files.createdAt));
+      .from(files_table)
+      .where(and(eq(files_table.parentId, folderId), eq(files_table.userId, userId)))
+      .orderBy(desc(files_table.createdAt));
   } catch (error) {
     console.error("Error fetching files:", error);
     throw error;
@@ -33,8 +30,8 @@ export async function getFilesByFolderId(
 export async function deleteFile(id: string, userId: string) {
   try {
     const [deletedFile] = await db
-      .delete(files)
-      .where(and(eq(files.id, id), eq(files.userId, userId)))
+      .delete(files_table)
+      .where(and(eq(files_table.id, parseInt(id)), eq(files_table.userId, userId)))
       .returning();
     return deletedFile;
   } catch (error) {
@@ -44,9 +41,9 @@ export async function deleteFile(id: string, userId: string) {
 }
 
 // Folder operations
-export async function createFolder(folder: NewFolder) {
+export async function createFolder(folder: NewFolderTable) {
   try {
-    const [newFolder] = await db.insert(folders).values(folder).returning();
+    const [newFolder] = await db.insert(folders_table).values(folder).returning();
     return newFolder;
   } catch (error) {
     console.error("Error creating folder:", error);
@@ -54,16 +51,13 @@ export async function createFolder(folder: NewFolder) {
   }
 }
 
-export async function getFoldersByParentId(
-  parentId: string | null,
-  userId: string
-) {
+export async function getFoldersByParentId(parentId: number | null, userId: string) {
   try {
     return await db
       .select()
-      .from(folders)
-      .where(and(eq(folders.parentId, parentId), eq(folders.userId, userId)))
-      .orderBy(desc(folders.createdAt));
+      .from(folders_table)
+      .where(and(eq(folders_table.parentId, parentId), eq(folders_table.userId, userId)))
+      .orderBy(desc(folders_table.createdAt));
   } catch (error) {
     console.error("Error fetching folders:", error);
     throw error;
@@ -74,19 +68,19 @@ export async function deleteFolder(id: string, userId: string) {
   try {
     // First delete all files in the folder
     await db
-      .delete(files)
-      .where(and(eq(files.folderId, id), eq(files.userId, userId)));
+      .delete(files_table)
+      .where(and(eq(files_table.parentId, id), eq(files_table.userId, userId)));
 
     // Then delete all subfolders recursively
     const subfolders = await getFoldersByParentId(id, userId);
     for (const subfolder of subfolders) {
-      await deleteFolder(subfolder.id, userId);
+      await deleteFolder(subfolder.id.toString(), userId);
     }
 
     // Finally delete the folder itself
     const [deletedFolder] = await db
-      .delete(folders)
-      .where(and(eq(folders.id, id), eq(folders.userId, userId)))
+      .delete(folders_table)
+      .where(and(eq(folders_table.id, parseInt(id)), eq(folders_table.userId, userId)))
       .returning();
 
     return deletedFolder;
@@ -97,10 +91,7 @@ export async function deleteFolder(id: string, userId: string) {
 }
 
 // Combined operations
-export async function getFolderContents(
-  folderId: string | null,
-  userId: string
-) {
+export async function getFolderContents(folderId: number, userId: string) {
   try {
     const [foldersList, filesList] = await Promise.all([
       getFoldersByParentId(folderId, userId),
@@ -113,6 +104,63 @@ export async function getFolderContents(
     };
   } catch (error) {
     console.error("Error fetching folder contents:", error);
+    throw error;
+  }
+}
+
+export async function getRootFolder(userId: string) {
+  try {
+    const [rootFolder] = await db
+      .select()
+      .from(folders_table)
+      .where(and(isNull(folders_table.parentId), eq(folders_table.userId, userId)));
+    console.log({ rootFolder });
+    return rootFolder;
+  } catch (error) {
+    console.error("Error fetching root folder:", error);
+    throw error;
+  }
+}
+
+export async function onboardUser(userId: string) {
+  try {
+    const driveFolder = await createFolder({
+      name: "Drive",
+      parentId: null,
+      userId: userId,
+    });
+    const rootFolderId = driveFolder.id;
+
+    const defaultFolders = [
+      {
+        name: "Recents",
+        parentId: rootFolderId,
+        userId: userId,
+      },
+
+      {
+        name: "Trash",
+        parentId: rootFolderId,
+        userId: userId,
+      },
+      {
+        name: "Starred",
+        parentId: rootFolderId,
+        userId: userId,
+      },
+    ];
+
+    const subFolders = await Promise.all(defaultFolders.map((folder) => createFolder(folder)));
+
+    await createFolder({
+      name: "Documents",
+      parentId: subFolders[0].id,
+      userId: userId,
+    });
+
+    return rootFolderId;
+  } catch (error) {
+    console.error("Error onboarding user:", error);
     throw error;
   }
 }

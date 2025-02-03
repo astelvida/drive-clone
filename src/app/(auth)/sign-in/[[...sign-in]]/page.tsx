@@ -10,8 +10,6 @@ export default function SignInPage() {
             card: "bg-white shadow-xl",
           },
         }}
-        afterSignInUrl="/drive"
-        afterSignUpUrl="/drive"
       />
     </div>
   );

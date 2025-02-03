@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FolderIcon, ClockIcon, TrashIcon, HardDriveIcon } from "lucide-react";
+import { Button } from "../ui/button";
+import { seedDatabase } from "@/db/queries";
 
 const navItems = [
   {
@@ -31,9 +33,7 @@ export function SideNav() {
     <aside className="w-64 border-r p-4">
       <nav className="space-y-2">
         {navItems.map((item) => {
-          const isActive = item.exact
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+          const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
           return (
             <Link
@@ -51,6 +51,7 @@ export function SideNav() {
             </Link>
           );
         })}
+        <Button onClick={() => seedDatabase()}>Seed Database</Button>
       </nav>
     </aside>
   );
