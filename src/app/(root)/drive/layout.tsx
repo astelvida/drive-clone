@@ -7,7 +7,7 @@ export default function DriveLayout({ children }: { children: React.ReactNode })
       {/* Header */}
       <header className="flex h-16 items-center justify-between border-b px-6">
         <h1 className="text-2xl font-semibold">My Drive</h1>
-        <UserButton afterSignOutUrl="/" />
+        <UserButton />
       </header>
 
       {/* Main content */}

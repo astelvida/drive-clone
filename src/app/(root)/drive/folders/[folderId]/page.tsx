@@ -1,14 +1,14 @@
 import { auth } from "@clerk/nextjs/server";
-import { FileGrid } from "@/components/drive/file-grid";
-import { notFound } from "next/navigation";
-import { FolderIcon } from "lucide-react";
-import { UploadFile } from "@/components/drive/upload-file";
 import {
   getAllParentsForFolder,
   getRootFolderbyUser,
   getFoldersByParentId,
   getFilesByParentId,
 } from "@/db/queries";
+import { notFound } from "next/navigation";
+import { FolderIcon } from "lucide-react";
+import { UploadFileButton } from "../../upload-file-button";
+import { FileGrid } from "../../file-grid";
 
 export default async function FolderPage({ params }: { params: Promise<{ folderId: string }> }) {
   const { folderId } = await params;
@@ -31,14 +31,9 @@ export default async function FolderPage({ params }: { params: Promise<{ folderI
         <FolderIcon className="h-4 w-4" />
         <h1 className="text-2xl font-bold">{rootFolder?.name}</h1>
 
-        <UploadFile folderId={parseInt(folderId)} />
+        <UploadFileButton folderId={parseInt(folderId)} />
       </div>
-      <FileGrid
-        folders={currentFolders}
-        files={currentFiles}
-        rootFolder={rootFolder}
-        parents={breadcrumbs}
-      />
+      <FileGrid folders={currentFolders} files={currentFiles} rootFolder={rootFolder} parents={breadcrumbs} />
     </div>
   );
 }

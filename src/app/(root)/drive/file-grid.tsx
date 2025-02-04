@@ -129,11 +129,9 @@ export function FileGrid({ folders, files, parents }: FileGridProps) {
 
   const userName = user?.fullName || user?.username || user?.emailAddresses[0].emailAddress;
 
-  console.log("folders", JSON.stringify(folders, null, 2));
-
-  console.log("files", JSON.stringify(files, null, 2));
-
-  console.log("parents", JSON.stringify(parents, null, 2));
+  // console.log("folders", JSON.stringify(folders, null, 2));
+  // console.log("files", JSON.stringify(files, null, 2));
+  // console.log("parents", JSON.stringify(parents, null, 2));
 
   const renderBreadcrumbs = () => {
     return (
