@@ -11,7 +11,6 @@ export default async function DrivePage() {
   }
 
   const rootFolder = await getRootFolderbyUser(userId!);
-  console.log({ rootFolder });
 
   let rootFolderId = rootFolder?.id;
   if (!rootFolderId) {

@@ -34,7 +34,6 @@ export async function getRootFolderbyUser(userId: string) {
       .from(folders_table)
       .where(and(isNull(folders_table.parentId), eq(folders_table.userId, userId)));
 
-    console.log({ rootFolder });
     return rootFolder;
   } catch (error) {
     console.error("Error fetching root folder:", error);
@@ -46,10 +45,7 @@ export async function getAllParentsForFolder(folderId: number) {
   const parents = [];
   let currentId: number | null = folderId;
   while (currentId !== null) {
-    const folder = await db
-      .selectDistinct()
-      .from(folders_table)
-      .where(eq(folders_table.id, currentId));
+    const folder = await db.selectDistinct().from(folders_table).where(eq(folders_table.id, currentId));
 
     if (!folder[0]) {
       throw new Error("Parent folder not found");

@@ -1,11 +1,11 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/api(.*)", "/get-started(.*)", "/"]);
+const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/api/uploadthing(.*)"]);
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/forum(.*)"]);
+const isProtectedRoute = createRouteMatcher(["/drive(.*)"]);
 
 // export default clerkMiddleware(async (auth, req, event) => {
-//   if (!isPublicRoute(req)) {
+//   if (isProtectedRoute(req)) {
 //     await auth.protect();
 //   }
 // });
@@ -13,12 +13,23 @@ const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/forum(.*)"]);
 export default clerkMiddleware(async (auth, req) => {
   const { userId, redirectToSignIn } = await auth();
 
-  if (!userId && !isPublicRoute(req)) {
-    // Add custom logic to run before redirecting
-
-    return redirectToSignIn();
+  if (isProtectedRoute(req)) {
+    await auth.protect();
   }
+
+  // if (!userId && isProtectedRoute(req)) {
+  //   return redirectToSignIn();
+  // }
 });
+
+// export default clerkMiddleware(async (auth, req) => {
+//   const { userId, redirectToSignIn } = await auth();
+
+//   if (!userId && !isPublicRoute(req)) {
+//     // Add custom logic to run before redirecting
+//     return redirectToSignIn();
+//   }
+// });
 
 export const config = {
   matcher: [

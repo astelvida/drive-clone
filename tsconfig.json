@@ -27,7 +27,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/app/(root)/drive/upload-file.-tsx"
+    "src/app/drive/upload-file.-tsx"
   ],
   "exclude": ["node_modules"]
 }

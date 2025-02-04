@@ -9,17 +9,11 @@ export const metadata = {
   description: "A Google Drive clone built with Next.js and Clerk",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${inter.className} min-h-screen bg-background antialiased`}
-        >
+        <body className={`${inter.className} min-h-screen bg-background antialiased`}>
           <main className="min-h-screen">{children}</main>
         </body>
       </html>
