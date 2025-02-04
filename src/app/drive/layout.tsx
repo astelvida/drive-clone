@@ -1,11 +1,7 @@
 import { UserButton } from "@clerk/nextjs";
 import { SideNav } from "@/components/drive/side-nav";
 
-export default function DriveLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DriveLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen flex-col">
       {/* Header */}

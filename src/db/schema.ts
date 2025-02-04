@@ -25,9 +25,10 @@ export const files_table = pgTable(
   {
     id: serial("id").primaryKey().notNull(),
     name: text("name").notNull(),
-    path: text("path").notNull(),
+    url: text("url").notNull(),
     size: bigint("size", { mode: "number" }).notNull(),
     type: text("type").notNull(),
+    key: text("key").notNull(),
     parentId: integer("parent_id")
       .notNull()
       .references(() => folders_table.id),

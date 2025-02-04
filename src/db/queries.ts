@@ -1,113 +1,66 @@
-"use server";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "./index";
 import { files_table, folders_table } from "./schema";
-import { eq } from "drizzle-orm";
-export async function getFilesByFolderId(folderId: number, userId: string) {
-  return await db.select().from(files_table).where(eq(files_table.parentId, folderId));
+import { eq, and, desc, isNull } from "drizzle-orm";
+
+export async function getFolderById(folderId: number) {
+  const folders = await db.select().from(folders_table).where(eq(folders_table.id, folderId));
+  return folders[0];
 }
 
-export async function getFoldersByParentId(parentId: number, userId: string) {
-  return await db.select().from(folders_table).where(eq(folders_table.parentId, parentId));
+export async function getFoldersByParentId(folderId: number, userId: string) {
+  const currentFolders = await db
+    .select()
+    .from(folders_table)
+    .where(and(eq(folders_table.parentId, folderId), eq(folders_table.userId, userId)))
+    .orderBy(desc(folders_table.id));
+
+  return currentFolders;
 }
 
-export async function seedDatabase() {
+export async function getFilesByParentId(folderId: number, userId: string) {
+  const currentFiles = await db
+    .select()
+    .from(files_table)
+    .where(and(eq(files_table.parentId, folderId), eq(files_table.userId, userId)))
+    .orderBy(desc(files_table.id));
+
+  return currentFiles;
+}
+
+export async function getRootFolderbyUser(userId: string) {
   try {
-    const user = await auth();
-    if (!user.userId) {
-      throw new Error("User not authenticated");
-    }
-
-    const userId = user.userId;
-    // Create root "My Drive" folder
     const [rootFolder] = await db
-      .insert(folders_table)
-      .values({
-        name: "My Drive",
-        parentId: null,
-        userId: userId,
-      })
-      .returning();
+      .select()
+      .from(folders_table)
+      .where(and(isNull(folders_table.parentId), eq(folders_table.userId, userId)));
 
-    // Create subfolders under root
-    const [documentsFolder, photosFolder, workFolder] = await db
-      .insert(folders_table)
-      .values([
-        {
-          name: "Documents",
-          parentId: rootFolder.id,
-          userId: userId,
-        },
-        {
-          name: "Photos",
-          parentId: rootFolder.id,
-          userId: userId,
-        },
-        {
-          name: "Work Projects",
-          parentId: rootFolder.id,
-          userId: userId,
-        },
-      ])
-      .returning();
-
-    // Create a nested folder inside Documents
-    const [reportsFolder] = await db
-      .insert(folders_table)
-      .values({
-        name: "Reports",
-        parentId: documentsFolder.id,
-        userId: userId,
-      })
-      .returning();
-
-    // Add sample files
-    await db.insert(files_table).values([
-      {
-        name: "vacation.jpg",
-        path: "/fake/path/vacation.jpg",
-        size: 2500000,
-        type: "image/jpeg",
-        parentId: photosFolder.id,
-        userId: userId,
-      },
-      {
-        name: "quarterly_report.pdf",
-        path: "/fake/path/quarterly_report.pdf",
-        size: 1200000,
-        type: "application/pdf",
-        parentId: reportsFolder.id,
-        userId: userId,
-      },
-      {
-        name: "monthly_report.pdf",
-        path: "/fake/path/monthly_report.pdf",
-        size: 1200000,
-        type: "application/pdf",
-        parentId: reportsFolder.id,
-        userId: userId,
-      },
-      {
-        name: "project_plan.docx",
-        path: "/fake/path/project_plan.docx",
-        size: 500000,
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        parentId: workFolder.id,
-        userId: userId,
-      },
-      {
-        name: "project_plan2.docx",
-        path: "/fake/path/project_plan2.docx",
-        size: 500000,
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        parentId: workFolder.id,
-        userId: userId,
-      },
-    ]);
-
-    return { success: true, message: "Database seeded successfully" };
+    console.log({ rootFolder });
+    return rootFolder;
   } catch (error) {
-    console.error("Error seeding database:", error);
+    console.error("Error fetching root folder:", error);
     throw error;
   }
+}
+
+export async function getAllParentsForFolder(folderId: number) {
+  const parents = [];
+  let currentId: number | null = folderId;
+  while (currentId !== null) {
+    const folder = await db
+      .selectDistinct()
+      .from(folders_table)
+      .where(eq(folders_table.id, currentId));
+
+    if (!folder[0]) {
+      throw new Error("Parent folder not found");
+    }
+    parents.unshift(folder[0]);
+    currentId = folder[0]?.parentId;
+  }
+  return parents;
+}
+
+export async function getSidebarFolders(userId: string) {
+  const folders = await db.select().from(folders_table).where(eq(folders_table.userId, userId));
+  return folders;
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,92 +10,62 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
-  MoreVertical,
-  UserCircle2,
-  ChevronUp,
-  Download,
-  Users,
-  Trash,
-  FileIcon,
+  MoreVerticalIcon,
+  UserCircle2Icon,
+  DownloadIcon,
+  TrashIcon,
   FolderIcon,
   LinkIcon,
+  ArrowRightIcon,
+  StarIcon,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { downloadFile, formatFileSize, shareFile } from "@/lib/utils";
 import Link from "next/link";
-interface FileGridProps {
-  contents: {
-    folders: Array<{
-      id: number;
-      name: string;
-      userId: string;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-    files: Array<{
-      id: number;
-      name: string;
-      size: number;
-      type: string;
-      userId: string;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-  };
-}
+import { type FileTable, type FolderTable } from "@/db/schema";
+import { useUser } from "@clerk/nextjs";
+import { deleteFile } from "@/app/actions";
+import { useRouter } from "next/navigation";
+import { getFileIcon } from "./get-file-icon";
 
-export function FileGrid({ contents }: FileGridProps) {
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+type DocRowProps = {
+  docData: FileTable & FolderTable;
+  userName: string | undefined;
+};
 
-  // Format file size to human readable format
-  const formatFileSize = (bytes: number) => {
-    if (!bytes) return "—";
-    const units = ["B", "KB", "MB", "GB"];
-    let size = bytes;
-    let unitIndex = 0;
+export const DocRow = ({ docData, userName }: DocRowProps) => {
+  const router = useRouter();
+  const isFile = Boolean(docData.type);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
+  async function handleDelete() {
+    setIsDeleting(true);
+    await deleteFile(docData.id);
+    setIsDeleting(false);
+  }
 
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-  };
-
-  // Handle item selection
-  const toggleSelection = (id: number) => {
-    const newSelection = new Set(selectedItems);
-    if (newSelection.has(id)) {
-      newSelection.delete(id);
-    } else {
-      newSelection.add(id);
-    }
-    setSelectedItems(newSelection);
-  };
+  const handleDownload = () => isFile && downloadFile(docData.url, docData.name);
+  const handleShare = () => isFile && shareFile(docData.url);
 
   const renderActionBar = () => {
-    if (selectedItems.size === 0) return null;
-
     return (
       <div className="flex items-center gap-2 bg-white border-b px-4 py-2">
-        <span className="text-sm">{selectedItems.size} selected</span>
         <div className="flex items-center gap-2 ml-4">
           <Button variant="ghost" size="icon">
-            <Users className="h-4 w-4" />
+            <StarIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <Download className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={handleDownload}>
+            <DownloadIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={handleShare}>
             <LinkIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <Trash className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={handleDelete}>
+            <TrashIcon className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon">
-            <MoreVertical className="h-4 w-4" />
+            <MoreVerticalIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -102,96 +73,111 @@ export function FileGrid({ contents }: FileGridProps) {
   };
 
   return (
+    <TableRow
+      className={`group ${isFile ? "cursor-pointer hover:bg-gray-100" : ""} ${
+        isDeleting ? "bg-slate-40/50 animate-pulse cursor-not-allowed" : ""
+      }`}
+      onClick={() => !isFile && router.push(`/drive/folders/${docData.id}`)}
+    >
+      <TableCell>
+        <div className="flex items-center gap-3">
+          {isFile ? getFileIcon(docData.type) : <FolderIcon className="h-6 w-6 text-slate-700" />}
+          {docData.name}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <UserCircle2Icon className="h-4 w-4" />
+          <span>{userName}</span>
+        </div>
+      </TableCell>
+
+      <TableCell>
+        <span className="text-xs text-gray-500">{isFile ? docData.type : "folder"}</span>
+      </TableCell>
+      <TableCell>
+        <span className="text-xs text-gray-500">{isFile ? formatFileSize(docData.size) : "—"}</span>
+      </TableCell>
+      <TableCell>{formatDistanceToNow(new Date(docData.updatedAt), { addSuffix: true })}</TableCell>
+
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {isFile && (
+            <Button variant="outline" size="icon" onClick={handleDelete}>
+              <TrashIcon className="h-4 w-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100">
+            <MoreVerticalIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+      <TableCell>{renderActionBar()}</TableCell>
+    </TableRow>
+  );
+};
+
+type FileGridProps = {
+  folders: FolderTable[];
+  files: FileTable[];
+  rootFolder: FolderTable;
+  parents: FolderTable[];
+};
+
+export function FileGrid({ folders, files, parents }: FileGridProps) {
+  const { user } = useUser();
+
+  const userName = user?.fullName || user?.username || user?.emailAddresses[0].emailAddress;
+
+  console.log("folders", JSON.stringify(folders, null, 2));
+
+  console.log("files", JSON.stringify(files, null, 2));
+
+  console.log("parents", JSON.stringify(parents, null, 2));
+
+  const renderBreadcrumbs = () => {
+    return (
+      <div className="flex items-center gap-4">
+        {parents.map((parent, index) => (
+          <Link
+            key={parent.id}
+            href={`/drive/folders/${parent.id}`}
+            className="flex items-center gap-2"
+          >
+            {parent.name}
+            {index !== parents.length - 1 && <ArrowRightIcon className="h-4 w-4" />}
+          </Link>
+        ))}
+      </div>
+    );
+  };
+
+  return (
     <div className="flex flex-col h-full">
-      {renderActionBar()}
+      {renderBreadcrumbs()}
+
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[40px]">
-              <Checkbox />
-            </TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Owner</TableHead>
-            <TableHead className="cursor-pointer">
-              <div className="flex items-center gap-1">
-                Last modified
-                <ChevronUp className="h-4 w-4" />
-              </div>
-            </TableHead>
-            <TableHead>File size</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Size</TableHead>
+            <TableHead className="cursor-pointer">Last modified</TableHead>
             <TableHead className="w-[40px]"></TableHead>
+            <TableHead className="w-[40px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {contents.folders.map((folder) => (
-            <Link
+          {folders.map((folder) => (
+            <DocRow
               key={folder.id}
-              href={`/drive/folders/${folder.id}`}
-              passHref
-              legacyBehavior
-              prefetch={false}
-            >
-              <TableRow className="group">
-                <TableCell>
-                  <Checkbox
-                    checked={selectedItems.has(folder.id)}
-                    onCheckedChange={() => toggleSelection(folder.id)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <FolderIcon className="h-4 w-4 text-gray-500" />
-                    {folder.name}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <UserCircle2 className="h-4 w-4" />
-                    <span>me</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {formatDistanceToNow(new Date(folder.updatedAt), { addSuffix: true })}
-                </TableCell>
-                <TableCell>—</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            </Link>
+              userName={userName}
+              docData={folder as FileTable & FolderTable}
+            />
           ))}
-          {contents.files.map((file) => (
-            <TableRow key={file.id} className="group">
-              <TableCell>
-                <Checkbox
-                  checked={selectedItems.has(file.id)}
-                  onCheckedChange={() => toggleSelection(file.id)}
-                />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <FileIcon className="h-4 w-4 text-gray-500" />
-                  {file.name}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <UserCircle2 className="h-4 w-4" />
-                  <span>me</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                {formatDistanceToNow(new Date(file.updatedAt), { addSuffix: true })}
-              </TableCell>
-              <TableCell>{formatFileSize(file.size)}</TableCell>
-              <TableCell>
-                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
+          {files.map((file) => (
+            <DocRow key={file.id} userName={userName} docData={file as FileTable & FolderTable} />
           ))}
         </TableBody>
       </Table>

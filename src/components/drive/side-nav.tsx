@@ -3,9 +3,9 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FolderIcon, ClockIcon, TrashIcon, HardDriveIcon } from "lucide-react";
+import { ClockIcon, TrashIcon, HardDriveIcon } from "lucide-react";
 import { Button } from "../ui/button";
-import { seedDatabase } from "@/db/queries";
+import { seedDatabase } from "@/db/seed";
 
 const navItems = [
   {
