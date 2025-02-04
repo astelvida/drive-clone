@@ -14,9 +14,11 @@ const nextConfig: NextConfig = {
       {
         hostname: "utfs.io",
       },
+      {
+        hostname: "img.clerk.com",
+      },
     ],
   },
 };
 
 export default nextConfig;
-0;

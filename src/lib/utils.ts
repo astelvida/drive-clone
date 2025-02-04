@@ -82,7 +82,7 @@ export const formatTime = (date: Date) => {
  * @param modifiedAt - The timestamp string, e.g. "2025-02-03T23:46:06.20"
  * @returns A formatted string.
  */
-export function formatLastModified(modifiedAt: string): string {
+export function formatLastModified(modifiedAt: Date): string {
   const modDate = new Date(modifiedAt);
   const now = new Date();
   // Check if the modified date is "today"

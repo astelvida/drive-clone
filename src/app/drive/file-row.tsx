@@ -3,22 +3,30 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { UserCircle2Icon, DownloadIcon, TrashIcon, FolderIcon, LinkIcon, StarIcon } from "lucide-react";
+import { DownloadIcon, TrashIcon, FolderIcon, LinkIcon, StarIcon } from "lucide-react";
 import { formatLastModified, downloadFile, formatFileSize, shareFile } from "@/lib/utils";
 import { type FileTable, type FolderTable } from "@/db/schema";
 import { deleteFile } from "@/app/actions";
 import { useRouter } from "next/navigation";
 import { getFileIcon } from "./get-file-icon";
+import Image from "next/image";
 
 type DocRowProps = {
   docData: FileTable & FolderTable;
-  userName: string | undefined;
+  modifiedBy: string | undefined;
+  userInfo: {
+    userName: string | undefined;
+    userId: string | undefined;
+    userImage: string | undefined;
+  };
 };
 
-export const FileRow = ({ docData, userName }: DocRowProps) => {
+export const FileRow = ({ docData, userInfo, modifiedBy }: DocRowProps) => {
   const router = useRouter();
   const isFile = Boolean(docData.type);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const { userName, userImage } = userInfo;
 
   async function handleDelete() {
     setIsDeleting(true);
@@ -29,20 +37,27 @@ export const FileRow = ({ docData, userName }: DocRowProps) => {
   const handleDownload = () => isFile && downloadFile(docData.url, docData.name);
   const handleShare = () => isFile && shareFile(docData.url);
 
-  const renderActionBar = () => {
+  const ActionBar = () => {
+    // TODO: make these repeatbale components
     return (
-      <div className="flex items-center gap-2 bg-white border-b px-4 py-2">
-        <div className="flex items-center gap-2 ml-4">
-          <Button variant="ghost" size="icon">
+      <div className="flex items-center gap-2 opacity-50 hover:opacity-90">
+        <div className="flex">
+          <Button variant="ghost" size="icon" className="hover:rounded-full">
             <StarIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleDownload}>
+          <Button variant="ghost" size="icon" className="hover:rounded-full" onClick={handleDownload}>
             <DownloadIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
+          <Button variant="ghost" size="icon" className="hover:rounded-full" onClick={handleShare}>
             <LinkIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleDelete} disabled={isDeleting}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:rounded-full"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
             <TrashIcon className="h-4 w-4" />
           </Button>
         </div>
@@ -52,10 +67,10 @@ export const FileRow = ({ docData, userName }: DocRowProps) => {
 
   return (
     <TableRow
-      className={`group ${isFile ? "cursor-pointer hover:bg-gray-100" : ""} ${
-        isDeleting ? "bg-slate-40/50 animate-pulse cursor-not-allowed" : ""
+      className={`group  hover:bg-slate-100/30 ${isFile ? "cursor-pointer" : ""} ${
+        isDeleting ? "bg-slate-300 animate-pulse cursor-not-allowed" : ""
       }`}
-      onClick={() => !isFile && router.push(`/drive/folders/${docData.id}`)}
+      onClick={() => !isFile && !isDeleting && router.push(`/drive/folders/${docData.id}`)}
     >
       <TableCell>
         <div className="flex items-center gap-3">
@@ -64,9 +79,21 @@ export const FileRow = ({ docData, userName }: DocRowProps) => {
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1">
-          <UserCircle2Icon className="h-4 w-4" />
-          <span>{userName}</span>
+        <div className="flex items-center gap-2">
+          {userImage ? (
+            <Image
+              src={userImage || ""}
+              alt={userName || "no username"}
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
+          ) : (
+            <div className="rounded-full bg-indigo-600 w-[24px] h-[24px] flex items-center justify-center">
+              <span className="text-gray-100 text-sm">{userName?.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+          <span className="text-xs">{modifiedBy}</span>
         </div>
       </TableCell>
 
@@ -77,7 +104,9 @@ export const FileRow = ({ docData, userName }: DocRowProps) => {
         <span className="text-xs text-gray-500">{isFile ? formatFileSize(docData.size) : "—"}</span>
       </TableCell>
       <TableCell>{formatLastModified(docData.updatedAt)}</TableCell>
-      <TableCell>{renderActionBar()}</TableCell>
+      <TableCell>
+        <ActionBar />
+      </TableCell>
     </TableRow>
   );
 };
